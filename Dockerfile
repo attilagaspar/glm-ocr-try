@@ -53,5 +53,5 @@ EXPOSE 11434
 # Copy application files
 COPY . /workspace/
 
-# Set up entrypoint
-CMD ["/bin/bash"]
+# Set up entrypoint - keep container running
+CMD ["tail", "-f", "/dev/null"]
