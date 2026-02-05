@@ -33,7 +33,7 @@ This project provides a Docker environment for running GLM-4V OCR with GPU suppo
    This will:
    - Build the Docker image with all dependencies
    - Start the container
-   - Pull the GLM-4V model via Ollama
+   - Pull the glm-ocr model via Ollama
 
 4. **Place your JPG/PDF files:**
    ```bash
@@ -72,7 +72,7 @@ docker-compose up -d
 
 # Start Ollama and pull the model
 docker-compose exec glm-ocr bash -c "ollama serve &"
-docker-compose exec glm-ocr ollama pull glm4v:9b
+docker-compose exec glm-ocr ollama pull glm-ocr
 
 # Run the OCR script
 docker-compose exec glm-ocr python3 ocr_to_table.py
@@ -131,7 +131,7 @@ from ocr_to_table import GLMOCRTableExtractor
 
 # Initialize with custom paths
 extractor = GLMOCRTableExtractor(
-    model_name="glm4v:9b",
+    model_name="glm-ocr",
     data_dir="/home/data",
     output_dir="/home/output"
 )
@@ -177,7 +177,7 @@ docker-compose exec glm-ocr nvidia-smi
 
 ```bash
 # Pull the model manually
-docker-compose exec glm-ocr ollama pull glm4v:9b
+docker-compose exec glm-ocr ollama pull glm-ocr
 ```
 
 ## Stopping the Environment
@@ -192,7 +192,7 @@ docker-compose down -v
 
 ## Notes
 
-- The GLM-4V 9B model requires significant GPU memory (at least 16GB VRAM recommended)
+- The glm-ocr model requires significant GPU memory (at least 16GB VRAM recommended)
 - First run will take longer as the model needs to be downloaded
 - PDF processing converts each page to an image first
 - Results quality depends on image quality and table complexity

@@ -18,7 +18,7 @@ from pdf2image import convert_from_path
 class GLMOCRTableExtractor:
     """Extract tables from images and PDFs using GLM-4V model"""
     
-    def __init__(self, model_name: str = "glm4v:9b", data_dir: str = "/home/data", output_dir: str = "/home/output"):
+    def __init__(self, model_name: str = "glm-ocr", data_dir: str = "/home/data", output_dir: str = "/home/output"):
         """
         Initialize the table extractor
         
