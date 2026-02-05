@@ -15,12 +15,18 @@ This project provides a Docker environment for running GLM-4V OCR with GPU suppo
 
 ## Quick Start
 
-1. **Make the setup script executable:**
+1. **Create directories for your data (on the Linux host):**
+   ```bash
+   mkdir -p /home/gaspar/econai/data
+   mkdir -p /home/gaspar/econai/output
+   ```
+
+2. **Make the setup script executable:**
    ```bash
    chmod +x setup.sh
    ```
 
-2. **Run the setup script:**
+3. **Run the setup script:**
    ```bash
    ./setup.sh
    ```
@@ -29,16 +35,29 @@ This project provides a Docker environment for running GLM-4V OCR with GPU suppo
    - Start the container
    - Pull the GLM-4V model via Ollama
 
-3. **Process your files:**
+4. **Place your JPG/PDF files:**
    ```bash
-   # Place your JPG/PDF files in the example-data/ folder
+   # On the host, copy files to:
+   cp your_file.jpg /home/gaspar/econai/data/
+   # Inside container, they'll appear at: /home/data/
+   ```
+
+5. **Process your files:**
+   ```bash
    docker-compose exec glm-ocr python3 ocr_to_table.py
    ```
 
-4. **Check the results:**
-   - Results will be saved in the `output/` folder
+6. **Check the results:**
+   - Results will be saved in `/home/gaspar/econai/output/` on the host
    - Tables are exported as Excel (.xlsx) files
    - JSON summaries are also generated
+
+**If you make changes to the Python script, rebuild the container:**
+```bash
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
 
 ## Manual Setup
 
@@ -61,23 +80,37 @@ docker-compose exec glm-ocr python3 ocr_to_table.py
 
 ## Directory Structure
 
+**On the Linux host:**
+```
+/home/gaspar/econai/
+├── data/                  # Put your JPG/PDF files here
+└── output/                # Results appear here
+```
+
+**Project files:**
 ```
 .
 ├── Dockerfile              # Docker image definition
 ├── docker-compose.yml      # Docker Compose configuration
 ├── setup.sh               # Setup script
 ├── ocr_to_table.py        # Main Python OCR script
-├── example-data/          # Input files (JPG/PDF)
-├── output/                # Generated results
-└── models/                # Cached models
+└── README.md              # This file
 ```
+
+**Inside the container:**
+- `/home/data/` → mounted from `/home/gaspar/econai/data/`
+- `/home/output/` → mounted from `/home/gaspar/econai/output/`
 
 ## Usage
 
 ### Processing Files
 
-1. Place your JPG or PDF files in the `example-data/` directory
-2. Run the processing script:
+1. Place your JPG or PDF files in `/home/gaspar/econai/data/` on the host
+2. Verify files are visible in container:
+   ```bash
+   docker-compose exec glm-ocr ls -la /home/data/
+   ```
+3. Run the processing script:
    ```bash
    docker-compose exec glm-ocr python3 ocr_to_table.py
    ```
@@ -96,14 +129,18 @@ You can also use the Python class directly:
 ```python
 from ocr_to_table import GLMOCRTableExtractor
 
-# Initialize
-extractor = GLMOCRTableExtractor(model_name="glm4v:9b")
+# Initialize with custom paths
+extractor = GLMOCRTableExtractor(
+    model_name="glm4v:9b",
+    data_dir="/home/data",
+    output_dir="/home/output"
+)
 
 # Process a single file
-extractor.process_file("/workspace/data/document.pdf", output_format="excel")
+extractor.process_file("/home/data/document.pdf", output_format="excel")
 
 # Or extract from an image
-table_data = extractor.extract_table_with_glm("/workspace/data/table.jpg")
+table_data = extractor.extract_table_with_glm("/home/data/table.jpg")
 ```
 
 ## GPU Configuration
