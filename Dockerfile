@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install Ollama (latest version including pre-releases)
+RUN curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION="0.5.5" sh
 
 # Set working directory
 WORKDIR /workspace
