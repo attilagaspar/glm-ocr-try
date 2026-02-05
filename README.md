@@ -4,24 +4,14 @@ This project provides a Docker environment for running GLM-4V OCR with GPU suppo
 
 ## Prerequisites
 
+**These should already be installed by your system administrator:**
 - Linux system with NVIDIA GPU
-- Docker installed
-- Docker Compose installed
-- NVIDIA Container Toolkit (nvidia-docker2) installed
+- Docker (with user access to run docker commands)
+- Docker Compose
+- NVIDIA Container Toolkit (nvidia-docker2)
 - NVIDIA GPU drivers
 
-### Installing NVIDIA Container Toolkit
-
-```bash
-# Ubuntu/Debian
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-sudo apt-get update
-sudo apt-get install -y nvidia-docker2
-sudo systemctl restart docker
-```
+**No sudo/admin access required** - all setup runs within Docker containers.
 
 ## Quick Start
 

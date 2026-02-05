@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     git \
+    zstd \
     poppler-utils \
     tesseract-ocr \
     libtesseract-dev \
