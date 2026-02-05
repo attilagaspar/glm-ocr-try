@@ -36,7 +36,8 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     transformers \
     accelerate \
     sentencepiece \
-    protobuf
+    protobuf \
+    ollama
 
 # Install GLM-OCR dependencies
 RUN pip3 install --no-cache-dir --break-system-packages \
