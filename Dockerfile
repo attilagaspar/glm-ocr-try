@@ -1,5 +1,5 @@
 # Dockerfile for GLM-OCR with Ollama and GPU support
-FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
+FROM ollama/ollama:0.15.5-rc2
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,9 +19,6 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Ollama (latest version including pre-releases)
-RUN curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION="0.5.5" sh
 
 # Set working directory
 WORKDIR /workspace
