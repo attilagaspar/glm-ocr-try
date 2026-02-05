@@ -10,9 +10,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
-      - ./example-data:/workspace/data
-      - ./output:/workspace/output
-      - ./models:/workspace/models
+      - /home/gaspar/econai:/home
     stdin_open: true
     tty: true
     deploy:
