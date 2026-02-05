@@ -18,17 +18,19 @@ from pdf2image import convert_from_path
 class GLMOCRTableExtractor:
     """Extract tables from images and PDFs using GLM-4V model"""
     
-    def __init__(self, model_name: str = "glm4v:9b"):
+    def __init__(self, model_name: str = "glm4v:9b", data_dir: str = "/home/data", output_dir: str = "/home/output"):
         """
         Initialize the table extractor
         
         Args:
             model_name: Name of the Ollama model to use
+            data_dir: Directory containing input files
+            output_dir: Directory for output files
         """
         self.model_name = model_name
-        self.output_dir = Path("/workspace/output")
-        self.data_dir = Path("/workspace/data")
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = Path(output_dir)
+        self.data_dir = Path(data_dir)
+        self.output_dir.mkdir(exist_ok=True, parents=True)
         
     def ensure_ollama_running(self):
         """Ensure Ollama service is running"""
@@ -308,15 +310,17 @@ def main():
     print("="*60)
     
     # Initialize extractor
-    extractor = GLMOCRTableExtractor()
+    extractor = GLMOCRTableExtractor(data_dir="/home/data", output_dir="/home/output")
     
     # Ensure Ollama is running
     extractor.ensure_ollama_running()
     
     # Find files to process
-    data_dir = Path("/workspace/data")
+    data_dir = extractor.data_dir
     if not data_dir.exists():
         print(f"Error: Data directory not found: {data_dir}")
+        print(f"Please create this directory on the host at: /home/gaspar/econai/data")
+        print(f"Then place your JPG/PDF files there.")
         return
     
     # Look for JPG and PDF files
