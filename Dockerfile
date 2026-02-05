@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /workspace
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     torch \
     torchvision \
     pillow \
@@ -39,7 +39,7 @@ RUN pip3 install --no-cache-dir \
     protobuf
 
 # Install GLM-OCR dependencies
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     rapidocr-onnxruntime \
     modelscope \
     easyocr
