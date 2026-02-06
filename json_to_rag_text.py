@@ -55,10 +55,14 @@ def extract_firm_records(json_data: Dict) -> List[str]:
     
     return firm_records
 
-def format_for_rag(firm_data: str, model: str, client: OpenAI) -> str:
+def format_for_rag(firm_data: str, model: str, client: OpenAI, source_name: str = None) -> str:
     """
     Send firm data to OpenAI API to reformat for RAG
     """
+    source_instruction = ""
+    if source_name:
+        source_instruction = f"\n10. Begin the output with a source citation: 'Source: {source_name}' followed by a blank line"
+    
     prompt = """You are a data formatting assistant for a historical economic research RAG (Retrieval-Augmented Generation) system.
 
 Your task: Convert the raw firm data below into well-structured, readable text optimized for semantic search and retrieval.
@@ -72,7 +76,7 @@ REQUIREMENTS:
 6. Make it easy for someone to quickly scan and find information
 7. Keep all factual information - do not invent or omit data
 8. Use consistent date formats
-9. Group related information together
+9. Group related information together{source_instruction}
 
 OUTPUT ONLY THE FORMATTED TEXT. DO NOT include explanations, metadata, or commentary.
 
@@ -86,7 +90,7 @@ FORMATTED TEXT:"""
             model=model,
             messages=[
                 {"role": "system", "content": "You are a precise data formatting assistant. Return only the formatted text, nothing else."},
-                {"role": "user", "content": prompt.format(firm_data=firm_data)}
+                {"role": "user", "content": prompt.format(firm_data=firm_data, source_instruction=source_instruction)}
             ],
             temperature=0.3,
             max_tokens=2000
@@ -99,7 +103,7 @@ FORMATTED TEXT:"""
         print(f"  ERROR calling OpenAI API: {e}")
         return f"[ERROR FORMATTING]\n{firm_data}"
 
-def process_json_files(input_folder: str, model: str, api_key: str, output_folder: str):
+def process_json_files(input_folder: str, model: str, api_key: str, output_folder: str, source_name: str = None):
     """
     Main processing function
     """
@@ -118,7 +122,10 @@ def process_json_files(input_folder: str, model: str, api_key: str, output_folde
         print("No page_N.json files found!")
         return
     
-    print(f"Found {len(json_files)} page files\n")
+    print(f"Found {len(json_files)} page files")
+    if source_name:
+        print(f"Source attribution: {source_name}")
+    print()
     
     # Process each file
     total_firms = 0
@@ -153,7 +160,7 @@ def process_json_files(input_folder: str, model: str, api_key: str, output_folde
                 print(f"    [{firm_idx}/{len(firm_records)}] Formatting firm record...", end='', flush=True)
                 
                 # Format with OpenAI
-                formatted_text = format_for_rag(firm_data, model, client)
+                formatted_text = format_for_rag(firm_data, model, client, source_name)
                 
                 # Write to file immediately
                 out_f.write("="*80 + "\n")
@@ -182,28 +189,32 @@ def main():
     Command line interface
     """
     if len(sys.argv) < 3:
-        print("Usage: python json_to_rag_text.py <input_folder> <openai_model> [output_folder] [api_key]")
+        print("Usage: python json_to_rag_text.py <input_folder> <openai_model> [output_folder] [source_name] [api_key]")
         print()
         print("Arguments:")
         print("  input_folder  : Folder containing page_N.json files")
         print("  openai_model  : OpenAI model to use (e.g., gpt-4o, gpt-4-turbo, gpt-3.5-turbo)")
         print("  output_folder : (Optional) Where to save output files (default: ./rag_output)")
+        print("  source_name   : (Optional) Source attribution (e.g., '1896 Compass', 'Budapest Stock Exchange Yearbook 1920')")
         print("  api_key       : (Optional) OpenAI API key (default: from OPENAI_API_KEY env var)")
         print()
-        print("Example:")
-        print("  python json_to_rag_text.py ./data gpt-4o ./output")
+        print("Examples:")
+        print("  python json_to_rag_text.py ./data gpt-4o")
+        print("  python json_to_rag_text.py ./data gpt-4o ./output '1896 Compass'")
+        print("  python json_to_rag_text.py ./data gpt-4o ./output '1920 Budapest Stock Exchange Yearbook' sk-...")
         sys.exit(1)
     
     input_folder = sys.argv[1]
     model = sys.argv[2]
     output_folder = sys.argv[3] if len(sys.argv) > 3 else "./rag_output"
-    api_key = sys.argv[4] if len(sys.argv) > 4 else os.getenv("OPENAI_API_KEY")
+    source_name = sys.argv[4] if len(sys.argv) > 4 else None
+    api_key = sys.argv[5] if len(sys.argv) > 5 else os.getenv("OPENAI_API_KEY")
     
     if not api_key:
         print("ERROR: OpenAI API key not provided!")
         print("Either:")
         print("  1. Set OPENAI_API_KEY environment variable")
-        print("  2. Pass as 4th argument: python json_to_rag_text.py <input> <model> <output> <api_key>")
+        print("  2. Pass as 5th argument")
         sys.exit(1)
     
     if not Path(input_folder).exists():
@@ -213,10 +224,12 @@ def main():
     print(f"Input folder: {input_folder}")
     print(f"OpenAI model: {model}")
     print(f"Output folder: {output_folder}")
+    if source_name:
+        print(f"Source name: {source_name}")
     print(f"API key: {'*' * (len(api_key) - 4) + api_key[-4:]}")
     print()
     
-    process_json_files(input_folder, model, api_key, output_folder)
+    process_json_files(input_folder, model, api_key, output_folder, source_name)
 
 if __name__ == "__main__":
     main()
