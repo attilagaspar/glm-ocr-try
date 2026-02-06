@@ -85,22 +85,39 @@ RAW FIRM DATA:
 
 FORMATTED TEXT:"""
 
+    full_prompt = prompt.format(firm_data=firm_data, source_instruction=source_instruction)
+    
+    print("\n" + "─"*80)
+    print("📤 SENDING TO OPENAI API:")
+    print("─"*80)
+    print(f"Model: {model}")
+    print(f"\nSystem: You are a precise data formatting assistant. Return only the formatted text, nothing else.")
+    print(f"\nUser prompt:\n{full_prompt}")
+    print("─"*80 + "\n")
+
     try:
         response = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a precise data formatting assistant. Return only the formatted text, nothing else."},
-                {"role": "user", "content": prompt.format(firm_data=firm_data, source_instruction=source_instruction)}
+                {"role": "user", "content": full_prompt}
             ],
             temperature=0.3,
             max_tokens=2000
         )
         
         formatted_text = response.choices[0].message.content.strip()
+        
+        print("📥 RESPONSE FROM OPENAI:")
+        print("─"*80)
+        print(formatted_text)
+        print("─"*80)
+        print("✓ Formatting complete\n")
+        
         return formatted_text
         
     except Exception as e:
-        print(f"  ERROR calling OpenAI API: {e}")
+        print(f"❌ ERROR calling OpenAI API: {e}\n")
         return f"[ERROR FORMATTING]\n{firm_data}"
 
 def process_json_files(input_folder: str, model: str, api_key: str, output_folder: str, source_name: str = None):
