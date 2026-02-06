@@ -40,7 +40,11 @@ class CEEHistoryRAG:
                 "prompt": text
             }
         )
-        return response.json()["embedding"]
+        result = response.json()
+        if "embedding" not in result:
+            print(f"ERROR: API response: {result}")
+            raise ValueError(f"Failed to get embedding: {result.get('error', 'Unknown error')}")
+        return result["embedding"]
     
     def add_document(self, text: str, metadata: Dict = None, doc_id: str = None):
         """Add a document to the vector database"""
