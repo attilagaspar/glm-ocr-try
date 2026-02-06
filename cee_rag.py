@@ -165,7 +165,7 @@ def main():
     
     # Example 1: Add some sample documents
     print("\n1. Adding sample documents...")
-    
+    """
     rag.add_document(
         "The Magyar Általános Kőszénbánya Részvénytársaság (Hungarian General Coal Mining Company) was established in 1891.",
         metadata={"type": "company", "year": 1891, "country": "Hungary"},
@@ -183,10 +183,16 @@ def main():
         metadata={"type": "industry", "period": "1900-1914", "country": "Romania"},
         doc_id="romania_oil"
     )
-    
+    """
     # Example 2: Add documents from a folder
-    print("\n2. To add all .txt files from a folder:")
-    print("   rag.add_documents_from_folder('/home/data/documents')")
+    print("\n2. Loading documents from /home/data/documents/...")
+    from pathlib import Path
+    docs_folder = Path("/home/data/documents")
+    if docs_folder.exists() and list(docs_folder.glob("*.txt")):
+        rag.add_documents_from_folder('/home/data/documents')
+        print(f"   Loaded documents from folder")
+    else:
+        print("   No .txt files found. Add your documents to /home/data/documents/")
     
     # Example 3: Query the system
     print("\n3. Querying the system...")
