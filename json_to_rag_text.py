@@ -41,6 +41,7 @@ def extract_firm_records(json_data: Dict) -> List[str]:
     """
     Extract firm records from JSON data
     Looks for 'shapes' list and extracts 'openai_outputs' from each element
+    Skips records without a firm name
     """
     firm_records = []
     
@@ -51,49 +52,42 @@ def extract_firm_records(json_data: Dict) -> List[str]:
         if isinstance(shape, dict) and 'openai_outputs' in shape:
             openai_output = shape['openai_outputs']
             if openai_output:  # Not empty
+                # Convert to string if it's a list or other type
+                if isinstance(openai_output, list):
+                    openai_output = ' '.join(str(item) for item in openai_output)
+                elif not isinstance(openai_output, str):
+                    openai_output = str(openai_output)
+                
+                # Skip if no firm name (check for common indicators)
+                openai_lower = openai_output.lower()
+                # Skip if it looks like it has no firm name
+                if 'firm name' in openai_lower and ('unknown' in openai_lower or 'missing' in openai_lower or 'n/a' in openai_lower):
+                    continue
+                # Also check if the text is just empty/whitespace or very short
+                if len(openai_output.strip()) < 10:
+                    continue
                 firm_records.append(openai_output)
     
     return firm_records
 
-def format_for_rag(firm_data: str, model: str, client: OpenAI, source_name: str = None) -> str:
+def format_for_rag(firm_data: str, model: str, client: OpenAI, source_name: str = None, prompt_file: str = "rag_formatting_prompt.txt") -> str:
     """
     Send firm data to OpenAI API to reformat for RAG
     """
     source_instruction = ""
     if source_name:
-        source_instruction = f"\n10. Begin the output with a source citation: 'Source: {source_name}' followed by a blank line"
+        source_instruction = f"\n7. Begin the output with: 'Source: {source_name}'"
     
-    prompt = """You are a data formatting assistant for a historical economic research RAG (Retrieval-Augmented Generation) system.
-
-Your task: Convert the raw firm data below into well-structured, readable text optimized for semantic search and retrieval.
-
-REQUIREMENTS:
-1. Use clear section headers (COMPANY INFO, LEADERSHIP, FINANCIALS, etc.)
-2. Write in complete sentences where appropriate
-3. List names clearly without excessive parenthetical notes
-4. Highlight key facts: founding year, location, industry, leaders
-5. Remove parsing artifacts and clean up formatting
-6. Make it easy for someone to quickly scan and find information
-7. Keep all factual information - do not invent or omit data
-8. Use consistent date formats
-9. Group related information together{source_instruction}
-
-OUTPUT ONLY THE FORMATTED TEXT. DO NOT include explanations, metadata, or commentary.
-
-RAW FIRM DATA:
-{firm_data}
-
-FORMATTED TEXT:"""
-
+    # Load prompt from file
+    prompt_path = Path(__file__).parent / prompt_file
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            prompt = f.read()
+    except FileNotFoundError:
+        print(f"❌ ERROR: Prompt file not found: {prompt_path}")
+        return f"[ERROR: PROMPT FILE NOT FOUND]\n{firm_data}"
+    
     full_prompt = prompt.format(firm_data=firm_data, source_instruction=source_instruction)
-    
-    print("\n" + "─"*80)
-    print("📤 SENDING TO OPENAI API:")
-    print("─"*80)
-    print(f"Model: {model}")
-    print(f"\nSystem: You are a precise data formatting assistant. Return only the formatted text, nothing else.")
-    print(f"\nUser prompt:\n{full_prompt}")
-    print("─"*80 + "\n")
 
     try:
         response = client.chat.completions.create(
@@ -108,11 +102,11 @@ FORMATTED TEXT:"""
         
         formatted_text = response.choices[0].message.content.strip()
         
-        print("📥 RESPONSE FROM OPENAI:")
+        print("\n" + "─"*80)
+        print("📥 OPENAI RESPONSE:")
         print("─"*80)
         print(formatted_text)
-        print("─"*80)
-        print("✓ Formatting complete\n")
+        print("─"*80 + "\n")
         
         return formatted_text
         
@@ -168,7 +162,9 @@ def process_json_files(input_folder: str, model: str, api_key: str, output_folde
         print(f"  Found {len(firm_records)} firm record(s)")
         
         # Create output file for this page
-        output_file = output_path / f"{json_file.stem}_firms.txt"
+        # Include parent folder name to avoid overwrites when processing recursively
+        parent_folder = json_file.parent.name
+        output_file = output_path / f"{parent_folder}_{json_file.stem}_firms.txt"
         
         # Open output file in write mode
         with open(output_file, 'w', encoding='utf-8') as out_f:
@@ -176,7 +172,7 @@ def process_json_files(input_folder: str, model: str, api_key: str, output_folde
             for firm_idx, firm_data in enumerate(firm_records, 1):
                 print(f"    [{firm_idx}/{len(firm_records)}] Formatting firm record...", end='', flush=True)
                 
-                # Format with OpenAI
+                # Format with OpenAI (prompt loaded from rag_formatting_prompt.txt)
                 formatted_text = format_for_rag(firm_data, model, client, source_name)
                 
                 # Write to file immediately

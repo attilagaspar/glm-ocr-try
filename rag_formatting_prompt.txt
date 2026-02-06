@@ -1,0 +1,14 @@
+Convert the raw firm data below into flowing paragraph form for a RAG system.
+
+RULES:
+1. Start with the firm name
+2. Write in complete sentences, no bullet points or lists
+3. ONLY state facts explicitly present in the raw data
+4. Do NOT write generic phrases or filler (no "characterized by", "dedicated management", etc.)
+5. If information is missing, omit it - do NOT invent or assume anything
+6. Keep it concise and factual{source_instruction}
+
+RAW FIRM DATA:
+{firm_data}
+
+FORMATTED TEXT:
