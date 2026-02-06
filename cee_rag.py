@@ -46,10 +46,13 @@ class CEEHistoryRAG:
             raise ValueError(f"Failed to get embedding: {result.get('error', 'Unknown error')}")
         return result["embedding"]
     
-    def add_document(self, text: str, metadata: Dict = None, doc_id: str = None):
+    def add_document(self, text: str, metadata: Dict = None, doc_id: str = None, verbose: bool = True):
         """Add a document to the vector database"""
         if doc_id is None:
             doc_id = f"doc_{self.collection.count()}"
+        
+        if verbose:
+            print(f"  Embedding: {doc_id}...", end='', flush=True)
         
         embedding = self.embed_text(text)
         
@@ -59,19 +62,31 @@ class CEEHistoryRAG:
             metadatas=[metadata or {}],
             ids=[doc_id]
         )
-        print(f"Added document: {doc_id}")
+        
+        if verbose:
+            print(f" ✓")
+        else:
+            print(f"Added document: {doc_id}")
     
     def add_documents_from_folder(self, folder_path: str, extension: str = ".txt"):
-        """Add all documents from a folder"""
+        """Add all documents from a folder (automatically chunks large docs)"""
         folder = Path(folder_path)
-        for file_path in folder.glob(f"*{extension}"):
+        files = list(folder.glob(f"*{extension}"))
+        
+        print(f"  Found {len(files)} file(s)")
+        
+        for idx, file_path in enumerate(files):
+            print(f"\n[{idx+1}/{len(files)}] Processing: {file_path.name}")
             with open(file_path, 'r', encoding='utf-8') as f:
                 text = f.read()
+                word_count = len(text.split())
+                print(f"  Size: {len(text)} chars, {word_count} words")
                 metadata = {
                     "filename": file_path.name,
                     "source": str(file_path)
                 }
-                self.add_document(text, metadata, doc_id=file_path.stem)
+                # Use chunked version for all documents to avoid context length issues
+                self.add_document_chunked(text, metadata, doc_id=file_path.stem)
     
     def chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
         """Split text into overlapping chunks"""
@@ -89,13 +104,16 @@ class CEEHistoryRAG:
         """Add a document in chunks (better for large docs)"""
         chunks = self.chunk_text(text)
         
+        print(f"  Chunking into {len(chunks)} pieces...")
+        
         for i, chunk in enumerate(chunks):
             chunk_id = f"{doc_id}_chunk_{i}" if doc_id else f"chunk_{self.collection.count()}"
             chunk_metadata = metadata.copy() if metadata else {}
             chunk_metadata["chunk_index"] = i
             chunk_metadata["total_chunks"] = len(chunks)
             
-            self.add_document(chunk, chunk_metadata, chunk_id)
+            print(f"    [{i+1}/{len(chunks)}]", end=' ', flush=True)
+            self.add_document(chunk, chunk_metadata, chunk_id, verbose=True)
     
     def search(self, query: str, n_results: int = 5) -> Dict:
         """Search for relevant documents"""
@@ -200,7 +218,7 @@ def main():
     
     # Example 3: Query the system
     print("\n3. Querying the system...")
-    question = "Tell me about coal mining companies in Hungary"
+    question = "Tell me about agricultural strikes in Hungary 1904-1907"
     answer, results = rag.query(question)
     
     print(f"\nQuestion: {question}")
