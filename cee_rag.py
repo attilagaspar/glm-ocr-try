@@ -19,11 +19,8 @@ class CEEHistoryRAG:
         self.llm_model = "qwen2.5:14b"
         self.embed_model = "nomic-embed-text"
         
-        # Initialize ChromaDB
-        self.client = chromadb.Client(Settings(
-            persist_directory="/home/data/chroma_db",
-            anonymized_telemetry=False
-        ))
+        # Initialize ChromaDB with PersistentClient for automatic disk persistence
+        self.client = chromadb.PersistentClient(path="/home/data/chroma_db")
         
         # Get or create collection
         self.collection = self.client.get_or_create_collection(
@@ -129,14 +126,28 @@ class CEEHistoryRAG:
     def generate_response(self, prompt: str, context: str = None) -> str:
         """Generate response using Qwen2.5"""
         if context:
-            full_prompt = f"""Context from historical documents:
+            full_prompt = f"""You are a research assistant with access to historical documents.
+
+CONTEXT FROM DOCUMENTS:
 {context}
 
-Question: {prompt}
+QUESTION: {prompt}
 
-Please answer based on the context provided above."""
+CRITICAL INSTRUCTIONS:
+- Answer ONLY using information from the context above
+- If the context doesn't contain relevant information, say "I don't find information about this in the provided documents"
+- Quote or reference specific details from the context
+- Do NOT use your general knowledge - ONLY use the provided context
+
+ANSWER:"""
         else:
-            full_prompt = prompt
+            full_prompt = f"""You have been asked: {prompt}
+
+However, NO CONTEXT DOCUMENTS were retrieved. This means the vector database is likely empty or the search failed.
+
+Respond with: "ERROR: No documents were retrieved from the database. The collection may be empty or the search query didn't match any documents."
+
+ANSWER:"""
         
         response = requests.post(
             f"{self.ollama_url}/api/generate",

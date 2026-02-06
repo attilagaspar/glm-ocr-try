@@ -43,11 +43,22 @@ def main():
         sys.exit(1)
     
     print("✓ RAG system ready!")
+    
+    # Show collection stats
+    doc_count = rag.collection.count()
+    print(f"\n📊 Database stats:")
+    print(f"   Documents in collection: {doc_count}")
+    
+    if doc_count == 0:
+        print("\n⚠️  WARNING: No documents in the collection!")
+        print("   Add documents first using cee_rag.py or add_documents_from_folder()")
+    
     print("\nCommands:")
     print("  Type your question and press Enter")
     print("  'quit' or 'exit' to exit")
     print("  'sources on/off' to toggle source display")
     print("  'n <number>' to change number of sources retrieved (default: 3)")
+    print("  'stats' to show database statistics")
     
     # Settings
     show_sources = True
@@ -90,11 +101,26 @@ def main():
                 print("❌ Invalid format. Use: n <number>")
             continue
         
+        if question.lower() == 'stats':
+            doc_count = rag.collection.count()
+            print(f"\n📊 Database statistics:")
+            print(f"   Total documents: {doc_count}")
+            print(f"   Collection name: {rag.collection.name}")
+            print(f"   Persist directory: /home/data/chroma_db")
+            continue
+        
         # Query the RAG system
         print("\n🤔 Thinking...\n")
         
         try:
             answer, results = rag.query(question, n_results=n_results)
+            
+            # Debug: Show how many results were retrieved
+            retrieved_count = len(results["documents"][0]) if results["documents"] else 0
+            print(f"🔎 Retrieved {retrieved_count} source(s)\n")
+            
+            if retrieved_count == 0:
+                print("⚠️  WARNING: No relevant documents found! The answer below is NOT based on your documents.\n")
             
             # Print answer
             print("💬 Answer:")
@@ -103,8 +129,10 @@ def main():
             print("─" * 80)
             
             # Print sources if enabled
-            if show_sources:
+            if show_sources and retrieved_count > 0:
                 print_sources(results)
+            elif show_sources and retrieved_count == 0:
+                print("\n📚 Sources used: (none - database may be empty)")
         
         except Exception as e:
             print(f"❌ ERROR: {e}")
