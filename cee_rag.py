@@ -123,7 +123,7 @@ class CEEHistoryRAG:
         
         return results
     
-    def generate_response(self, prompt: str, context: str = None) -> str:
+    def generate_response(self, prompt: str, context: str = None, timeout: int = 120) -> str:
         """Generate response using Qwen2.5"""
         if context:
             full_prompt = f"""You are a research assistant with access to historical documents.
@@ -155,7 +155,8 @@ ANSWER:"""
                 "model": self.llm_model,
                 "prompt": full_prompt,
                 "stream": False
-            }
+            },
+            timeout=timeout
         )
         
         return response.json()["response"]

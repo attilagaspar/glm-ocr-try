@@ -113,14 +113,31 @@ def main():
         print("\n🤔 Thinking...\n")
         
         try:
-            answer, results = rag.query(question, n_results=n_results)
+            print("   [1/3] Embedding query...", end='', flush=True)
+            # We'll need to call search directly to add progress
+            query_embedding = rag.embed_text(question)
+            print(" ✓")
+            
+            print("   [2/3] Searching vector database...", end='', flush=True)
+            results = rag.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=n_results
+            )
+            print(" ✓")
             
             # Debug: Show how many results were retrieved
             retrieved_count = len(results["documents"][0]) if results["documents"] else 0
-            print(f"🔎 Retrieved {retrieved_count} source(s)\n")
+            print(f"   Retrieved {retrieved_count} source(s)")
             
             if retrieved_count == 0:
-                print("⚠️  WARNING: No relevant documents found! The answer below is NOT based on your documents.\n")
+                print("\n⚠️  WARNING: No relevant documents found! The answer below is NOT based on your documents.\n")
+                context = None
+            else:
+                context = "\n\n---\n\n".join(results["documents"][0])
+            
+            print("   [3/3] Generating answer...", end='', flush=True)
+            answer = rag.generate_response(question, context)
+            print(" ✓\n")
             
             # Print answer
             print("💬 Answer:")
@@ -134,8 +151,11 @@ def main():
             elif show_sources and retrieved_count == 0:
                 print("\n📚 Sources used: (none - database may be empty)")
         
+        except requests.exceptions.Timeout:
+            print(" ⏱️  TIMEOUT")
+            print("❌ The LLM took too long to respond (>120s). Try a simpler question or check if Ollama is overloaded.")
         except Exception as e:
-            print(f"❌ ERROR: {e}")
+            print(f"\n❌ ERROR: {e}")
             print("\nTrying to reconnect...")
             try:
                 rag = CEEHistoryRAG()
