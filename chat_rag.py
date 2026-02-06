@@ -57,12 +57,12 @@ def main():
     print("  Type your question and press Enter")
     print("  'quit' or 'exit' to exit")
     print("  'sources on/off' to toggle source display")
-    print("  'n <number>' to change number of sources retrieved (default: 3)")
+    print("  'n <number>' to change number of sources retrieved (default: 2)")
     print("  'stats' to show database statistics")
     
     # Settings
     show_sources = True
-    n_results = 3
+    n_results = 2  # Reduced from 3 to keep context smaller
     
     while True:
         print_separator()
@@ -134,6 +134,12 @@ def main():
                 context = None
             else:
                 context = "\n\n---\n\n".join(results["documents"][0])
+                context_length = len(context.split())
+                print(f"   Context length: {context_length} words")
+                
+                # Warn if context is very large
+                if context_length > 2000:
+                    print(f"   ⚠️  Large context may slow down generation!")
             
             print("   [3/3] Generating answer...", end='', flush=True)
             answer = rag.generate_response(question, context)
